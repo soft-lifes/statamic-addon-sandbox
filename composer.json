@@ -1,0 +1,22 @@
+{
+    "name": "soft-lifes/statamic-addon-sandbox",
+    "description": "Minimal Statamic starter kit for addon development sandboxes",
+    "keywords": ["statamic", "starter-kit", "addon", "sandbox", "development"],
+    "license": "MIT",
+    "type": "statamic-starter-kit",
+    "authors": [
+        {
+            "name": "soft-lifes",
+            "url": "https://soft-lifes.com"
+        }
+    ],
+    "require": {
+        "statamic/cms": "^6.0"
+    },
+    "extra": {
+        "statamic": {
+            "name": "Addon Sandbox",
+            "description": "Minimal starter kit for addon development with Sail"
+        }
+    }
+}

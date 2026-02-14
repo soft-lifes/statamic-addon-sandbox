@@ -191,6 +191,12 @@ info "Generating application key..."
     docker compose exec -T laravel.test php artisan key:generate --quiet
 success "App key generated"
 
+# Step 8c: Run Statamic install (publishes CP assets)
+info "Running Statamic install..."
+./vendor/bin/sail artisan statamic:install --no-interaction --quiet 2>/dev/null || \
+    docker compose exec -T laravel.test php artisan statamic:install --no-interaction --quiet
+success "Statamic installed"
+
 # Step 9: Clear and warm stache
 info "Warming the Stache..."
 ./vendor/bin/sail artisan statamic:stache:clear --quiet 2>/dev/null || true

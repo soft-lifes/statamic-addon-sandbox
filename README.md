@@ -8,6 +8,21 @@ Minimal starter kit for creating Sail-based sandboxes to test Statamic addons.
 statamic new my-addon-sandbox soft-lifes/statamic-addon-sandbox --pro --git --no-interaction
 ```
 
+## Host Prerequisites
+
+The initializer runs a few setup steps on your host before Sail is up.
+
+Required on host:
+- Docker (running, with permission to access daemon)
+- PHP CLI
+- Composer
+- Git
+- lsof
+
+`./init-sandbox` includes a preflight guard and exits early with clear messages if anything is missing.
+
+Also required: run inside a Git repository (use `--git` in `statamic new`, or run `git init` first).
+
 ## Usage
 
 After installation, initialize the sandbox with your addon:

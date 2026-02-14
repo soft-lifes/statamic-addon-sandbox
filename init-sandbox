@@ -25,6 +25,15 @@ if [[ $# -lt 1 ]]; then
     exit 1
 fi
 
+# Check Docker is available
+if ! command -v docker &>/dev/null; then
+    error "Docker is not installed or not in PATH"
+fi
+
+if ! docker info &>/dev/null; then
+    error "Docker is not running or you don't have permission. Try: sudo usermod -aG docker \$USER && logout/login"
+fi
+
 ADDON_REPO="$1"
 ADDON_BRANCH="${2:-main}"
 ADDON_NAME=$(echo "$ADDON_REPO" | cut -d'/' -f2)
@@ -86,9 +95,15 @@ mkdir -p addons
 if [[ -d "addons/${ADDON_NAME}" ]]; then
     warn "Addon directory already exists, skipping submodule"
 else
-    git submodule add -b "${ADDON_BRANCH}" "https://github.com/${ADDON_REPO}.git" "addons/${ADDON_NAME}" 2>/dev/null || \
-    git submodule add "https://github.com/${ADDON_REPO}.git" "addons/${ADDON_NAME}"
-    success "Submodule added: addons/${ADDON_NAME}"
+    # Try with specified branch first, fall back to default branch
+    if git submodule add -b "${ADDON_BRANCH}" "https://github.com/${ADDON_REPO}.git" "addons/${ADDON_NAME}" 2>/dev/null; then
+        success "Submodule added: addons/${ADDON_NAME} (branch: ${ADDON_BRANCH})"
+    elif git submodule add "https://github.com/${ADDON_REPO}.git" "addons/${ADDON_NAME}" 2>/dev/null; then
+        warn "Branch '${ADDON_BRANCH}' not found, using default branch"
+        success "Submodule added: addons/${ADDON_NAME}"
+    else
+        error "Failed to add submodule. Check that ${ADDON_REPO} exists on GitHub."
+    fi
 fi
 
 # Step 5: Update composer.json with path repository

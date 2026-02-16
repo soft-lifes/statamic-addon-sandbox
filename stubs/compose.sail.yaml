@@ -20,6 +20,20 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
+    queue:
+        image: 'sail-8.4/app'
+        depends_on:
+            - laravel.test
+        command: php artisan queue:listen --sleep=3 --tries=3 --verbose
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+            IGNITION_LOCAL_SITES_PATH: '${PWD}'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
 
 networks:
     sail:

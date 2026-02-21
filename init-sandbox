@@ -42,7 +42,6 @@ preflight_checks() {
 
     require_cmd docker "Install Docker Desktop / Docker Engine first."
     require_cmd git
-    require_cmd lsof
     require_cmd php "Install PHP CLI (used for sail:install and composer.json updates)."
     require_cmd composer "Install Composer (used during sandbox setup)."
 
@@ -57,9 +56,22 @@ preflight_checks() {
     success "Preflight checks passed"
 }
 
+port_in_use() {
+    local port="$1"
+    # Check host ports (ss is ubiquitous on modern Linux; lsof as fallback)
+    if command -v ss &>/dev/null; then
+        ss -tlnH "sport = :$port" 2>/dev/null | grep -q .
+    elif command -v lsof &>/dev/null; then
+        lsof -i :"$port" &>/dev/null
+    else
+        # Can't check — assume free
+        return 1
+    fi
+}
+
 find_available_port() {
     local port="$1"
-    while lsof -i :"$port" &>/dev/null || docker ps --format '{{.Ports}}' 2>/dev/null | grep -q ":$port->"; do
+    while port_in_use "$port" || docker ps --format '{{.Ports}}' 2>/dev/null | grep -q ":$port->"; do
         ((port++))
     done
     echo "$port"

@@ -17,7 +17,6 @@ Required on host:
 - PHP CLI
 - Composer
 - Git
-- lsof
 
 `./init-sandbox` includes a preflight guard and exits early with clear messages if anything is missing.
 

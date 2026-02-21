@@ -90,7 +90,11 @@ set_env_key() {
     fi
 
     if grep -q "^${key}=" .env; then
-        sed -i "s|^${key}=.*|${key}=${value}|" .env
+        if [[ "$(uname)" == "Darwin" ]]; then
+            sed -i '' "s|^${key}=.*|${key}=${value}|" .env
+        else
+            sed -i "s|^${key}=.*|${key}=${value}|" .env
+        fi
     else
         echo "${key}=${value}" >> .env
     fi

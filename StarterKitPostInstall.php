@@ -18,7 +18,7 @@ class StarterKitPostInstall
         $console->newLine();
         $console->line('This will:');
         $console->line('  • Install Laravel Sail');
-        $console->line('  • Add the addon as a git submodule');
+        $console->line('  • Clone the addon into addons/');
         $console->line('  • Configure composer path repository');
         $console->line('  • Start Docker containers');
         $console->line('  • Fix permissions');

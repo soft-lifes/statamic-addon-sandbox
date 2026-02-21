@@ -41,13 +41,14 @@ cd my-addon-sandbox
 This will:
 1. Configure `.env` with auto-assigned ports and correct UID/GID
 2. Install Laravel Sail
-3. Add the addon as a git submodule
-4. Configure composer path repository
-5. Require the addon via composer
-6. Start Sail containers
-7. Fix storage permissions
-8. Warm the Stache
-9. Create asset stub manifest (if addon has build config)
+3. Clone the addon into `addons/` (independent git repo, not a submodule)
+4. Add `addons/` to `.gitignore`
+5. Configure composer path repository (symlinked)
+6. Require the addon via composer
+7. Start Sail containers
+8. Fix storage permissions
+9. Warm the Stache
+10. Create asset stub manifest (if addon has build config)
 
 ## Access
 
@@ -71,8 +72,8 @@ After initialization:
 
 ```
 my-addon-sandbox/
-├── addons/
-│   └── {addon-name}/     # Git submodule
+├── addons/               # gitignored
+│   └── {addon-name}/     # Independent git clone (symlinked via composer)
 ├── users/
 │   └── test@sandbox.test.yaml
 ├── init-sandbox          # Setup script

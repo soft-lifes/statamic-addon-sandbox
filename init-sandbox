@@ -114,23 +114,29 @@ install_sail() {
     success "Sail installed"
 }
 
-add_submodule() {
-    info "Adding addon as git submodule..."
+clone_addon() {
+    info "Cloning addon into addons/..."
 
     mkdir -p addons
 
     if [[ -d "addons/${ADDON_NAME}" ]]; then
-        warn "Addon directory already exists, skipping submodule"
+        warn "Addon directory already exists, skipping clone"
         return
     fi
 
-    if git submodule add -b "${ADDON_BRANCH}" "https://github.com/${ADDON_REPO}.git" "addons/${ADDON_NAME}" 2>/dev/null; then
-        success "Submodule added: addons/${ADDON_NAME} (branch: ${ADDON_BRANCH})"
-    elif git submodule add "https://github.com/${ADDON_REPO}.git" "addons/${ADDON_NAME}" 2>/dev/null; then
+    if git clone -b "${ADDON_BRANCH}" "https://github.com/${ADDON_REPO}.git" "addons/${ADDON_NAME}" 2>/dev/null; then
+        success "Cloned: addons/${ADDON_NAME} (branch: ${ADDON_BRANCH})"
+    elif git clone "https://github.com/${ADDON_REPO}.git" "addons/${ADDON_NAME}" 2>/dev/null; then
         warn "Branch '${ADDON_BRANCH}' not found, using default branch"
-        success "Submodule added: addons/${ADDON_NAME}"
+        success "Cloned: addons/${ADDON_NAME}"
     else
-        error "Failed to add submodule. Check that ${ADDON_REPO} exists on GitHub."
+        error "Failed to clone. Check that ${ADDON_REPO} exists on GitHub."
+    fi
+
+    # Ensure addons/ is gitignored in the sandbox
+    if ! grep -qxF 'addons/' .gitignore 2>/dev/null; then
+        echo 'addons/' >> .gitignore
+        success "Added addons/ to .gitignore"
     fi
 }
 
@@ -245,7 +251,7 @@ echo ""
 
 configure_env
 install_sail
-add_submodule
+clone_addon
 detect_addon_composer_name
 configure_composer_path_repository
 require_addon

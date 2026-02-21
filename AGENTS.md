@@ -6,7 +6,7 @@ This is a Statamic addon development environment using Laravel Sail (Docker).
 
 ```
 .
-├── addons/{addon-name}/   ← Addon code (git submodule) - EDIT HERE
+├── addons/{addon-name}/   ← Addon code (independent clone, symlinked) - EDIT HERE
 ├── config/                ← Statamic/Laravel config
 ├── content/               ← Statamic content (collections, entries)
 ├── resources/             ← Views, assets

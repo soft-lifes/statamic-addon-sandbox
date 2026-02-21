@@ -266,8 +266,8 @@ info "Branch: ${ADDON_BRANCH}"
 echo ""
 
 configure_env
-install_sail
 clone_addon
+install_sail
 detect_addon_composer_name
 configure_composer_path_repository
 require_addon

@@ -100,6 +100,11 @@ set_env_key() {
     fi
 }
 
+addon_display_name() {
+    # "statamic-auto-alt-text" → "Auto Alt Text"
+    echo "$1" | sed 's/^statamic-//' | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g'
+}
+
 configure_env() {
     info "Configuring .env..."
 
@@ -108,13 +113,18 @@ configure_env() {
     HOST_UID=$(id -u)
     HOST_GID=$(id -g)
 
+    DISPLAY_NAME=$(addon_display_name "${ADDON_NAME}")
+
     set_env_key APP_PORT "$APP_PORT"
     set_env_key VITE_PORT "$VITE_PORT"
     set_env_key WWWUSER "$HOST_UID"
     set_env_key WWWGROUP "$HOST_GID"
     set_env_key STATAMIC_PRO_ENABLED true
+    set_env_key APP_NAME "\"${DISPLAY_NAME} Sandbox\""
+    set_env_key STATAMIC_CUSTOM_LOGO_TEXT "\"${DISPLAY_NAME}\""
 
     success ".env configured (APP_PORT=${APP_PORT}, VITE_PORT=${VITE_PORT})"
+    success "Branding: ${DISPLAY_NAME}"
 }
 
 install_sail() {
@@ -193,7 +203,7 @@ file_put_contents('composer.json', json_encode(\$json, JSON_PRETTY_PRINT | JSON_
 
 require_addon() {
     info "Requiring addon: ${ADDON_COMPOSER_NAME}..."
-    composer require "${ADDON_COMPOSER_NAME}:@dev" --quiet --ignore-platform-reqs --no-scripts
+    composer require "${ADDON_COMPOSER_NAME}:@dev" --quiet --ignore-platform-reqs --no-scripts --no-interaction
     success "Addon installed"
 }
 
@@ -220,6 +230,11 @@ post_start_setup() {
         docker compose exec -T laravel.test php artisan statamic:install --no-interaction --quiet
     success "Statamic installed"
 
+    info "Discovering addons..."
+    ./vendor/bin/sail artisan statamic:addons:discover --quiet 2>/dev/null || \
+        docker compose exec -T laravel.test php artisan statamic:addons:discover --quiet
+    success "Addons discovered"
+
     info "Warming the Stache..."
     ./vendor/bin/sail artisan statamic:stache:clear --quiet 2>/dev/null || true
     ./vendor/bin/sail artisan statamic:stache:warm --quiet 2>/dev/null || \
@@ -227,13 +242,22 @@ post_start_setup() {
     success "Stache warmed"
 }
 
-create_asset_stub_manifest_if_needed() {
-    if [[ -f "addons/${ADDON_NAME}/vite.config.js" ]] || [[ -f "addons/${ADDON_NAME}/webpack.mix.js" ]]; then
+publish_addon_assets() {
+    # If the addon ships pre-built assets, copy them to the public directory.
+    # This avoids the "Vite manifest not found" error without needing npm/build.
+    local dist_dir="addons/${ADDON_NAME}/resources/dist/build"
+    local target_dir="public/vendor/${ADDON_NAME}/build"
+
+    if [[ -d "$dist_dir" && -f "$dist_dir/manifest.json" ]]; then
+        info "Publishing pre-built addon assets..."
+        mkdir -p "${target_dir}"
+        cp -r "${dist_dir}/"* "${target_dir}/"
+        success "Addon assets published"
+    elif [[ -f "addons/${ADDON_NAME}/vite.config.js" ]] || [[ -f "addons/${ADDON_NAME}/webpack.mix.js" ]]; then
         info "Creating asset stub manifest..."
-        MANIFEST_DIR="public/vendor/${ADDON_NAME}/build"
-        mkdir -p "${MANIFEST_DIR}"
-        echo '{}' > "${MANIFEST_DIR}/manifest.json"
-        success "Stub manifest created"
+        mkdir -p "${target_dir}"
+        echo '{}' > "${target_dir}/manifest.json"
+        warn "Addon has build config but no pre-built assets — stub manifest created"
     fi
 }
 
@@ -273,17 +297,22 @@ configure_composer_path_repository
 require_addon
 start_sail
 post_start_setup
-create_asset_stub_manifest_if_needed
+publish_addon_assets
 
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║${NC}     Sandbox Ready!                                          ${GREEN}║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
+HOSTNAME=$(hostname 2>/dev/null || echo "localhost")
 echo -e "  ${BLUE}URL:${NC}      http://localhost:${APP_PORT}/cp"
+if [[ "$HOSTNAME" != "localhost" ]]; then
+    echo -e "  ${BLUE}Tailscale:${NC} http://${HOSTNAME}:${APP_PORT}/cp"
+fi
 echo -e "  ${BLUE}Email:${NC}    test@sandbox.test"
 echo -e "  ${BLUE}Password:${NC} sandbox123"
 echo ""
 echo -e "  ${BLUE}Addon:${NC}    addons/${ADDON_NAME}/"
+echo -e "  ${BLUE}Brand:${NC}    ${DISPLAY_NAME}"
 echo -e "  ${BLUE}Sail:${NC}     ./vendor/bin/sail [up|down|artisan|shell]"
 echo ""
